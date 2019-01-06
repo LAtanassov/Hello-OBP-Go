@@ -11,29 +11,30 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ErrInvalidCredentials returned by OBP API
+var ErrInvalidCredentials = errors.New("OBP-20004: Invalid login credentials. Check username/password.")
+
 // Doer sends an HTTP request and returns an HTTP response, following policy (such as redirects, cookies, auth) as configured on the client.
 type Doer interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
 // NewDirectService returns a Direct Login Service
-func NewDirectService(doer Doer, url *url.URL, consumerKey string) *DirectService {
+func NewDirectService(doer Doer, url *url.URL) *DirectService {
 	return &DirectService{
-		doer:        doer,
-		url:         url,
-		consumerKey: consumerKey,
+		doer: doer,
+		url:  url,
 	}
 }
 
 // DirectService used for Direct Login
 type DirectService struct {
-	doer        Doer
-	url         *url.URL
-	consumerKey string
+	doer Doer
+	url  *url.URL
 }
 
 // Login authenticates user and returns token
-func (s *DirectService) Login(username, password string) (string, error) {
+func (s *DirectService) Login(username, password, consumerKey string) (string, error) {
 
 	req, err := http.NewRequest(http.MethodPost, s.url.String(), bytes.NewReader([]byte{}))
 	if err != nil {
@@ -41,7 +42,7 @@ func (s *DirectService) Login(username, password string) (string, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("DirectLogin username=\"%v\",password=\"%v\",consumer_key=\"%v\"", username, password, s.consumerKey))
+	req.Header.Set("Authorization", fmt.Sprintf("DirectLogin username=\"%v\",password=\"%v\",consumer_key=\"%v\"", username, password, consumerKey))
 
 	res, err := s.doer.Do(req)
 	if err != nil {
@@ -55,10 +56,21 @@ func (s *DirectService) Login(username, password string) (string, error) {
 func unmarshalToken(r io.Reader) (string, error) {
 	var t struct {
 		Token string `json:"token"`
+		Error string `json:"error,omitempty"`
 	}
 
 	if err := json.NewDecoder(r).Decode(&t); err != nil {
 		return "", errors.Wrap(err, "could not unmarshal response")
 	}
+
+	if len(t.Error) != 0 {
+		switch t.Error {
+		case ErrInvalidCredentials.Error():
+			return "", ErrInvalidCredentials
+		default:
+			return "", errors.New(t.Error)
+		}
+	}
+
 	return t.Token, nil
 }
