@@ -11,7 +11,7 @@ import (
 	"github.com/LAtanassov/Hello-OBP-Go/pkg/auth"
 )
 
-func TestITDirectSerivce(t *testing.T) {
+func TestITLogin(t *testing.T) {
 
 	t.Run("should login with valid credentials", func(t *testing.T) {
 
@@ -25,10 +25,9 @@ func TestITDirectSerivce(t *testing.T) {
 			t.Errorf("url.Parse(...) error %v", err)
 		}
 
-		s := auth.NewDirectService(http.DefaultClient, u)
-		_, err = s.Login(username, password, consumerKey)
+		_, err = auth.Login(http.DefaultClient, u, username, password, consumerKey)
 		if err != nil {
-			t.Errorf("s.Login(...) error %v", err)
+			t.Errorf("auth.Login(...) error %v", err)
 		}
 	})
 
@@ -44,14 +43,14 @@ func TestITDirectSerivce(t *testing.T) {
 			t.Errorf("url.Parse(...) error %v", err)
 		}
 
-		s := auth.NewDirectService(http.DefaultClient, u)
-		_, err = s.Login(username, password, consumerKey)
+		_, err = auth.Login(http.DefaultClient, u, username, password, consumerKey)
+
 		if err == nil {
-			t.Errorf("s.Login(...) want error %v", auth.ErrInvalidCredentials)
+			t.Errorf("auth.Login(...) want error %v", auth.ErrInvalidCredentials)
 		}
 
 		if err != auth.ErrInvalidCredentials {
-			t.Errorf("s.Login(...) want error %v but got error %v", auth.ErrInvalidCredentials, err)
+			t.Errorf("auth.Login(...) want error %v but got error %v", auth.ErrInvalidCredentials, err)
 		}
 	})
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func TestDirectSerivce(t *testing.T) {
+func TestLogin(t *testing.T) {
 
 	t.Run("should login with valid credentials", func(t *testing.T) {
 
@@ -40,10 +40,9 @@ func TestDirectSerivce(t *testing.T) {
 			t.Errorf("url.Parse(...) error %v", err)
 		}
 
-		s := auth.NewDirectService(http.DefaultClient, u)
-		gotToken, err := s.Login(username, password, consumerKey)
+		gotToken, err := auth.Login(http.DefaultClient, u, username, password, consumerKey)
 		if err != nil {
-			t.Errorf("s.Login(...) error %v", err)
+			t.Errorf("auth.Login(...) error %v", err)
 		}
 
 		if wantToken != gotToken {
@@ -71,15 +70,14 @@ func TestDirectSerivce(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		u, err := url.Parse(ts.URL)
+		url, err := url.Parse(ts.URL)
 		if err != nil {
 			t.Errorf("url.Parse(...) error %v", err)
 		}
 
-		s := auth.NewDirectService(http.DefaultClient, u)
-		_, err = s.Login(username, password, consumerKey)
+		_, err = auth.Login(http.DefaultClient, url, username, password, consumerKey)
 		if err == nil {
-			t.Errorf("s.Login(...) want error %v", wantError)
+			t.Errorf("auth.Login(...) want error %v", wantError)
 		}
 
 		if err != wantError {

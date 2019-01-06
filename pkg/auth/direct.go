@@ -19,24 +19,10 @@ type Doer interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-// NewDirectService returns a Direct Login Service
-func NewDirectService(doer Doer, url *url.URL) *DirectService {
-	return &DirectService{
-		doer: doer,
-		url:  url,
-	}
-}
-
-// DirectService used for Direct Login
-type DirectService struct {
-	doer Doer
-	url  *url.URL
-}
-
 // Login authenticates user and returns token
-func (s *DirectService) Login(username, password, consumerKey string) (string, error) {
+func Login(doer Doer, u *url.URL, username, password, consumerKey string) (string, error) {
 
-	req, err := http.NewRequest(http.MethodPost, s.url.String(), bytes.NewReader([]byte{}))
+	req, err := http.NewRequest(http.MethodPost, u.String(), bytes.NewReader([]byte{}))
 	if err != nil {
 		return "", err
 	}
@@ -44,7 +30,7 @@ func (s *DirectService) Login(username, password, consumerKey string) (string, e
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("DirectLogin username=\"%v\",password=\"%v\",consumer_key=\"%v\"", username, password, consumerKey))
 
-	res, err := s.doer.Do(req)
+	res, err := doer.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -73,4 +59,11 @@ func unmarshalToken(r io.Reader) (string, error) {
 	}
 
 	return t.Token, nil
+}
+
+// WithToken adds token as header to request
+func WithToken(token string) func(*http.Request) {
+	return func(req *http.Request) {
+		req.Header.Set("Authorization", fmt.Sprintf("DirectLogin token=\"%v\"", token))
+	}
 }
