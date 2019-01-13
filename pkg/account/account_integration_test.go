@@ -36,6 +36,10 @@ func TestITGet(t *testing.T) {
 		if err != nil {
 			t.Errorf("url.Parse(...) error %v", err)
 		}
+
 		_, err = account.Get(http.DefaultClient, a, auth.WithToken(token))
+		if err != nil {
+			t.Errorf("account.Get(...) error %v", err)
+		}
 	})
 }
